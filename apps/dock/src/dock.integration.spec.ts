@@ -6,6 +6,7 @@ import { AppModule } from './app.module.js';
 import { OfficialFeedsProvider } from './providers/official-feeds.provider.js';
 
 process.env.DOCK_TOKEN = 'token-de-prueba';
+process.env.CORPUS_DIR = new URL('../../../corpus', import.meta.url).pathname;
 
 const TOKEN = { 'X-Dock-Token': 'token-de-prueba' };
 
@@ -60,7 +61,7 @@ describe('Dock (integración, Etapa B)', () => {
     const res = await request(app.getHttpServer()).get('/health').expect(200);
     expect(res.body.status).toBe('ok');
     expect(res.body.feeds.configured).toContain('NWS');
-    expect(res.body.endpoints['POST /ask']).toContain('guardian ok');
+    expect(res.body.endpoints['POST /ask']).toContain('citizen ok');
   });
 
   it('GET /alerts sin token → 401; con token → contrato §2', async () => {
@@ -86,13 +87,23 @@ describe('Dock (integración, Etapa B)', () => {
     expect(res.body.guardian.proactiveAlert).toBe(true);
   });
 
-  it('POST /ask citizen → 501 declarado (Etapa C); awareness → 501 (Etapa D)', async () => {
+  it('POST /ask citizen responde desde el corpus (Etapa C); awareness → 501 (Etapa D)', async () => {
     const c = await request(app.getHttpServer())
       .post('/ask')
       .set(TOKEN)
-      .send({ mode: 'citizen', text: '¿Cuál es la ley?' })
-      .expect(501);
-    expect(c.body.detail).toContain('Etapa C');
+      .send({ mode: 'citizen', text: '¿Puedo grabar esta conversación en Pensilvania?' })
+      .expect(200);
+    expect(c.body.source).toBe('corpus');
+    expect(c.body.citations.length).toBeGreaterThan(0);
+    expect(c.body.text).toContain('no asesoría legal');
+    // Tema fuera del corpus: abstención declarada, jamás invención.
+    const u = await request(app.getHttpServer())
+      .post('/ask')
+      .set(TOKEN)
+      .send({ mode: 'citizen', text: '¿Cuál es la ley de divorcio en Pensilvania?' })
+      .expect(200);
+    expect(u.body.text).toContain('no está en el corpus verificado');
+    expect(u.body.citations).toEqual([]);
     await request(app.getHttpServer())
       .post('/ask')
       .set(TOKEN)

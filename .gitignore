@@ -7,3 +7,5 @@ node_modules/
 # Capturas y material de prueba local
 captures/
 *.log
+dist/
+*.tsbuildinfo

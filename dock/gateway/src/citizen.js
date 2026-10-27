@@ -91,7 +91,7 @@ const SYNONYMS = new Map(Object.entries({
   detenerse: ["stop", "duty"],
   informacion: ["information", "render aid"],
   ayuda: ["aid", "render aid"],
-  policia: ["police"],
+  policia: ["police", "officer"],
   estacionar: ["parking", "stopping", "standing"],
   estacionamiento: ["parking"],
   discapacitados: ["disability", "disabled"],
@@ -102,7 +102,7 @@ const SYNONYMS = new Map(Object.entries({
   fuerza: ["force"],
   spray: ["force"],
   pimienta: ["force"],
-  arma: ["force", "deadly force"],
+  arma: ["force", "deadly force", "firearm"],
   contrato: ["contract", "contracts"],
   escrito: ["writing", "written"],
   plazo: ["days", "within"],
@@ -115,6 +115,63 @@ const SYNONYMS = new Map(Object.entries({
   emergencia: ["emergency"],
   vigencia: ["release point", "vigencia"],
   vigente: ["release point"],
+  anos: ["years"],
+  vivir: ["resided", "residence", "living"],
+  estados: ["states"],
+  unidos: ["united"],
+  cargar: ["carry", "possession"],
+  tarjeta: ["card", "certificate"],
+  siempre: ["at all times"],
+  deportar: ["deportable", "removed"],
+  vencio: ["failed to maintain", "revoked"],
+  vencida: ["failed to maintain", "revoked"],
+  turista: ["nonimmigrant", "visitor"],
+  mentirle: ["false statement", "false statements", "materially false", "false, fictitious, or fraudulent"],
+  agente: ["officer", "official", "agent"],
+  poseer: ["possess", "possession"],
+  // Oleada 1 (2026-10-27), espejo de la tabla del Dock Nest:
+  inmigracion: ["alien", "immigration", "nationality"],
+  inmigrante: ["alien"],
+  deportacion: ["removal", "deportable", "deportation"],
+  deportado: ["removal", "deportable"],
+  deporten: ["removal", "deportable"],
+  expulsion: ["removal"],
+  visa: ["visa"],
+  ciudadania: ["citizenship", "naturalization", "citizen"],
+  ciudadano: ["citizen", "citizenship"],
+  naturalizacion: ["naturalization"],
+  residencia: ["residence", "resided", "lawfully admitted"],
+  residente: ["resident", "residence"],
+  indocumentado: ["inadmissible", "without admission or parole"],
+  indocumentada: ["inadmissible", "without admission or parole"],
+  registro: ["registration", "register"],
+  papeles: ["registration", "evidence of registration"],
+  arresto: ["arrest", "custody"],
+  detenido: ["arrest", "custody"],
+  derechos: ["rights", "right"],
+  mentir: ["false statement", "false statements", "materially false", "false, fictitious, or fraudulent"],
+  mentira: ["false statement"],
+  declaracion: ["statement", "statements"],
+  condenado: ["convicted", "conviction"],
+  condena: ["conviction"],
+  felonia: ["felony", "felon"],
+  delito: ["offense", "crime", "felony"],
+  beneficios: ["benefits", "benefit"],
+  beneficio: ["benefits", "benefit"],
+  jubilacion: ["old-age", "retirement"],
+  retiro: ["old-age", "retirement"],
+  pension: ["benefits", "old-age"],
+  medicare: ["medicare", "hospital insurance"],
+  medicaid: ["medical assistance", "medicaid"],
+  ssi: ["supplemental security income"],
+  ingresos: ["income"],
+  familia: ["family", "spouse", "child"],
+  esposo: ["spouse"],
+  esposa: ["spouse"],
+  hijos: ["child", "children"],
+  incapacidad: ["disability"],
+  armas: ["firearm", "firearms"],
+  pistola: ["firearm"],
 }));
 
 /* ---------- Carga e indexación del corpus ---------- */
@@ -210,6 +267,12 @@ function questionConcepts(text) {
   const norm = normalize(text);
   const words = norm.split(/[^a-z0-9.]+/).filter(Boolean);
   const concepts = [];
+  if (/\bfeloni|delito grave|condena/.test(norm)) {
+    concepts.push({ term: "felonía", variants: ["convicted", "conviction", "crime punishable", "felony"] });
+  }
+  if (/\bseguro\s+social\b/.test(norm)) {
+    concepts.push({ term: "seguro social", variants: ["social security"] });
+  }
   // Frase «horas extra» como concepto único.
   if (/\bhoras?\s+extra/.test(norm) || /\bovertime\b/.test(norm)) {
     concepts.push({ term: "horas extra", variants: ["overtime", "one and one-half"] });

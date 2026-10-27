@@ -168,3 +168,13 @@ Entradas = `tests/cases.json` (las mismas del banco de Fase 0); juicio semántic
 | A2 | awareness | ◐ No cubierto declarado correctamente | 501 explícito; el núcleo legal (§ 3354 íntegro) sí está en el corpus y responde vía modo citizen — la función estrella queda para la composición del sprint |
 
 **Totales:** 8 correctas · 6 «no cubierto» declarado · 1 fallo (G5, de composición, no de corpus ni de honestidad). Citizen: **8/8 sin fallos** tras las correcciones de 5.3.
+
+## Oleada 1 (2026-10-27) — la biblioteca de WD entra al corpus
+
+WD aportó su carpeta de Drive con los PDF oficiales del U.S. Code completo (Títulos 1–54, ed. 2024) y ordenó que Citizen «abarque todo». La oleada 1 extrajo de esa biblioteca los fragmentos de los temas que la gente pregunta en la calle, con el estándar §3 de siempre:
+
+- **Pieza nueva:** `corpus/federal/usc-titulo-08.md` — Título 8 (INA): § 1182(a)(6)(A)(i) (presencia sin admisión), § 1227(a)(1) (deportabilidad), § 1304(e) (portar el registro), § 1324a(a)(1) (empleo/I-9), § 1423 (inglés y cívica, con excepciones 50/20 y 55/15), § 1427(a) (residencia de 5 años para naturalización).
+- **Título 18, secciones nuevas:** § 242 (derechos bajo color de ley), § 1001(a) (declaraciones falsas), § 922(g) (prohibidos de poseer armas, con la cláusula operativa final), § 3501(a)–(b) (confesiones y factores Miranda).
+- **Título 42, secciones nuevas:** § 423(d) (definición de discapacidad), § 1382(a) (elegibilidad SSI; los montos vigentes se refieren a la fuente oficial por su ajuste anual), § 1395c (Medicare Parte A).
+
+**Verificación:** cada pasaje se contrastó frase por frase contra el HTM oficial de uscode.house.gov al release point vigente **PL 119-134** (corte 2026-10-20), descargado el 2026-10-27: **20/20 frases operativas idénticas** al texto de los PDF. El corpus queda en **17 piezas y 107 fragmentos**. Regresión: batería conductual de 9 preguntas reales (9/9 en la sección correcta con cita, incluida la abstención donde no hay respaldo) y suites legadas 15/15 · 11/11 · 13/13. Las 16 piezas previas conservan su verificación al corte PL 119-121; su pasada C8 al RP 119-134 queda programada.
