@@ -194,3 +194,13 @@ Tres ajustes de motor nacidos de esta oleada, con batería conductual como evide
 3. Sinónimos del encuentro policial (registrar/cateo, silencio/callado, orden judicial, abogado, demandar, constitución/enmienda, entrar sin papeles) y ruido eliminado (`pasa`/`pasan` a stopwords; fuera las variantes genéricas `estados`/`unidos` → `states`/`united`).
 
 **Batería oleada 2 (6/6) + regresión oleada 1 y banco (9/9)**, en vivo contra el Dock compilado: silencio→Enmienda V · registrar el carro→Enmienda IV · grabar al policía→Enmienda I · demandar al funcionario→§ 1983 · abogado→Enmienda VI · igual protección→Enmienda XIV § 1 · naturalización→§ 1427 · sin papeles→§ 1182 · tarjeta de residencia→§ 1304 · felonía y armas→§ 922(g) · discapacidad→§ 423 · deportación→§ 1227 · grabar en PA→Wiretap § 5703 · salario→MWA Section 4 · divorcio→abstención NO_CUBIERTO.
+
+## Oleada 3 (2026-10-27) — Crédito y deudas (puestos #2 y #3 del estudio de demanda)
+
+Decisión de WD tras el estudio encargado por él: la oleada 3 es el dinero del día a día. La pieza `corpus/federal/usc-titulo-15.md` (antes un compañero vacío) ahora trae, desde el PDF oficial (ed. 2024) de su biblioteca y verificadas frase por frase contra el HTM oficial al **release point PL 119-134 (17/17)**:
+
+- **FCRA — tu reporte de crédito**: § 1681c (cuánto dura lo adverso: bancarrota 10 años, casi todo lo demás 7), § 1681g (ver todo tu archivo), § 1681i (disputar un error: reinvestigación gratuita en 30 días y borrado si no se verifica), § 1681m (si te niegan algo por el reporte: aviso obligatorio y derechos).
+- **FDCPA — el cobrador**: § 1692c (horarios 8–9, nada de llamadas al trabajo si el empleador lo prohíbe, y la carta escrita de cese), § 1692d (acoso prohibido: amenazas, lenguaje obsceno, llamadas repetidas), § 1692e (mentiras: monto, estatus legal, arrestos falsos), § 1692f (cobrar montos no autorizados), § 1692g (validación: aviso en 5 días, tus 30 días para disputar por escrito y pausa del cobro hasta que verifiquen).
+- Alcance declarado en la pieza: la FDCPA obliga al cobrador profesional (debt collector, § 1692a(6)); el acreedor original no siempre está cubierto.
+
+**Corpus tras la oleada 3: 18 piezas, 124 fragmentos.** Batería en vivo: **6/6 de la oleada** (disputa→§ 1681i, duración→§ 1681c, acoso→§ 1692d, validación→§ 1692g, trabajo→§ 1692c, negación→§ 1681m) + **5/5 de regresión cruzada** (§ 1427, § 922, Enmienda V, Wiretap § 5703, divorcio-abstención). Ajustes de motor en paridad: sinónimos de crédito/deudas, `llama/llaman` → el teléfono del § 1692d(5), y stopwords de relleno (`todo`, `eso`, `este`…) que inflaban fragmentos ajenos.

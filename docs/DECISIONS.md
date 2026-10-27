@@ -99,3 +99,11 @@ NOA Guardian · Rol responsable: Arquitecto de Sistema · Toda decisión lleva f
 3. Ajustes de recuperación con evidencia (paridad Nest↔legado): el preámbulo de una pieza no puntúa por su encabezado; los empates se resuelven por cobertura de conceptos; la tabla de sinónimos crece con el vocabulario del encuentro policial y pierde variantes genéricas que disparaban falsos positivos (`states`/`united`).
 
 **Consecuencia.** Citizen responde hoy, con cita verificada, las preguntas del encuentro: silencio (Enm. V), registro del carro (Enm. IV), grabar al policía (Enm. I), abogado (Enm. VI), igual protección (Enm. XIV), demandar al funcionario (§ 1983) — y la migración de la oleada 1 no regresó (batería 15/15 combinada). Lo que la Constitución y los estatutos no fijan (excepciones jurisprudenciales a la orden de registro, deber de identificarse por estado) sigue fuera: Citizen se abstiene antes que inventar.
+
+## ADR-019 — Oleada 3 por evidencia de demanda: crédito y deudas (2026-10-27)
+
+**Contexto.** WD encargó fuera un estudio de demanda (Top 20 con fuentes oficiales: AOPC, CFPB, LSC, BJS) antes de decidir la siguiente oleada — la primera vez que el orden del corpus lo fija evidencia externa y no intuición. El estudio ubicó crédito y deudas en los puestos #2 y #3 (5.8 M de reclamaciones de crédito y ~387 mil de cobro ante el CFPB en 2025) y confirmó el límite de diseño de Citizen: lo práctico policial es jurisprudencia y no se disfraza de estatuto.
+
+**Decisión.** La oleada 3 completa la pieza del Título 15 con FCRA (§§ 1681c, 1681g, 1681i, 1681m) y FDCPA (§§ 1692c, 1692d, 1692e, 1692f, 1692g), desde la biblioteca oficial de WD y con contraste al release point vigente PL 119-134 (17/17 frases). Se declara el alcance de la FDCPA (cobrador profesional, § 1692a(6)) en la propia pieza. Candidatas siguientes según el cruce estudio↔corpus (sin decidir): apelaciones de beneficios, tránsito práctico, familia.
+
+**Consecuencia.** Citizen cubre hoy el dinero cotidiano con cita verificada: disputar el reporte, saber cuánto dura lo adverso, exigir la validación de una deuda y frenar el acoso del cobrador — batería 6/6 en vivo sin regresiones en las oleadas 1 y 2.
