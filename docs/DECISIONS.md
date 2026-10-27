@@ -77,3 +77,9 @@ NOA Guardian · Rol responsable: Arquitecto de Sistema · Toda decisión lleva f
 - **Decisión:** La raíz del monorepo usa **npm workspaces** (`apps/web`, `apps/dock`, `packages/contracts`) solo para orquestar scripts e instalación. Los CLI (`@angular/cli`, `@nestjs/cli`, schematics) y TypeScript viven **dentro de cada app**, con sus versiones propias; la cadena de herramientas del proyecto es **npm 11**.
 - **Contexto:** Con los CLI como devDependencies de la raíz, `npm install` fallaba con ERESOLVE y solo pasaba con `--legacy-peer-deps` (la base construida en el Tiiny requirió esa bandera). Sin ellos en la raíz, la instalación es limpia y sin banderas.
 - **Consecuencia:** `npm install` en la raíz instala todo el monorepo sin banderas especiales — verificado el 27-oct-2026 (537 paquetes, npm 11).
+
+
+## ADR-016 — Bucle de contención implementado en el gateway Nest *(27-oct-2026)*
+- **Decisión:** El bucle de contención de `docs/SECURITY-HARDENING.md` §6 vive en `apps/dock/src/containment/`: detección determinista por puntuación de señales (anulación, suplantación, extracción, cargas codificadas, sondeo de herramientas) sobre toda cadena no confiable de `POST /ask`; marca silenciosa; tarpit progresivo (1.5 s / 6 s); bloqueo a la 3.ª marca con respuesta mínima (sin oráculo de error); reactivación solo del propietario vía `POST /containment/reactivate` protegido por el token del Dock; eventos mínimos (hora y tipo de señal) en memoria, sin contenido personal.
+- **Contexto:** Diseño de WD del 27-oct (plan de contención «hasta fundir el intento»). La Etapa B no llama a ningún modelo: las respuestas deterministas de Guardian SON el repertorio fijo y seguro; la contención protege ya el perímetro real del Dock.
+- **Consecuencia:** Suite propia del módulo (detección, bucle, reactivación, aislamiento entre sesiones) dentro de las 26 pruebas del Dock, todas en verde el 27-oct-2026. La extensión a salidas del modelo (Etapa D) reusará este mismo servicio.

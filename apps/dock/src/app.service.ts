@@ -1,17 +1,38 @@
 import { Injectable } from '@nestjs/common';
+import type { HealthResponse } from '@noa-guardian/contracts';
+import { OfficialFeedsProvider } from './providers/official-feeds.provider.js';
+
+export interface DockHealth extends HealthResponse {
+  feeds: {
+    configured: string[];
+    cacheEntries: number;
+    cacheTtlSeconds: number;
+  };
+  endpoints: Record<string, string>;
+}
 
 @Injectable()
 export class AppService {
+  constructor(private readonly feeds: OfficialFeedsProvider) {}
+
   getHello(): string {
-    return 'Hello World!';
+    return 'Guardian Dock (NestJS) — NOA Guardian. Ver GET /health.';
   }
 
-  getHealth(): { status: 'ok'; project: string; version: string; time: string } {
+  getHealth(): DockHealth {
     return {
       status: 'ok',
       project: 'noa-guardian-dock',
       version: '1.0.0',
       time: new Date().toISOString(),
+      feeds: this.feeds.feedsStatus(),
+      endpoints: {
+        'GET /alerts': 'ok (NWS · USGS · NASA EONET)',
+        'POST /ask':
+          'guardian ok · citizen 501 (Etapa C) · awareness 501 (Etapa D)',
+        'POST /see': '501 stub (SAM 3.1, Etapa D)',
+        'POST /containment/reactivate': 'ok (solo propietario, con token)',
+      },
     };
   }
 }

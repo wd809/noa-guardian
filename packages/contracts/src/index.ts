@@ -21,7 +21,9 @@ export interface GuardianAskInput {
   location?: Ubicacion;
 }
 
-export type FuenteRespuesta = 'model' | 'corpus' | 'mock';
+/** 'feeds' = compuesto determinista desde las fuentes oficiales (modo
+ * guardian, docs/GUARDIAN-MODE-V1.md); 'mock' se etiqueta siempre. */
+export type FuenteRespuesta = 'model' | 'corpus' | 'feeds' | 'mock';
 
 export interface UsoModelo {
   model: string;
@@ -51,9 +53,65 @@ export interface OfficialAlert {
   severity: string;
   headline: string;
   area: string;
-  ends?: string;
+  /** Inicio de vigencia (ISO) cuando la fuente lo publica. */
+  starts?: string | null;
+  /** Fin de vigencia (ISO); null = la fuente no lo define. */
+  ends?: string | null;
   /** Solo fuentes oficiales. */
   source: FuenteAlerta;
+  /** Enlace oficial de la alerta. */
+  url?: string;
+}
+
+/** Estado declarado de una fuente: si cae, se dice — jamás se rellena. */
+export interface FuenteEstado {
+  ok: boolean;
+  count: number;
+  error?: string;
+}
+
+/** Respuesta de GET /alerts (contrato §2 ampliado). */
+export interface AlertasRespuesta {
+  alerts: OfficialAlert[];
+  sources: Record<string, FuenteEstado>;
+  point: Ubicacion & { defaulted?: boolean; label?: string };
+  generatedAt: string;
+  cache: { hit: boolean; ttlSeconds: number };
+  fuente?: string;
+}
+
+/** Bloque `guardian` que acompaña la respuesta de /ask en modo guardian. */
+export interface GuardianMeta {
+  point: Ubicacion & { defaulted: boolean };
+  total: number;
+  /** Alertas descartadas por vencidas (corrección 26-oct: no cuentan). */
+  expiredExcluded: number;
+  bySeverity: Record<string, number>;
+  proactiveAlert: boolean;
+  proactiveRule: string;
+  alerts: Array<{
+    event: string;
+    severity: string;
+    headline: string;
+    area: string;
+    ends: string | null;
+    source: FuenteAlerta;
+    url?: string;
+  }>;
+  sources: Record<string, FuenteEstado>;
+  generatedAt: string;
+}
+
+/** Respuesta de POST /ask en modo guardian (contrato §1 + extensión §2). */
+export interface GuardianAskResponse extends GuardianAnswer {
+  guardian?: GuardianMeta;
+}
+
+/** Evento mínimo de seguridad (SECURITY-HARDENING §6): hora y tipo de
+ * señal. SIN contenido personal, sin texto del usuario, sin ubicación. */
+export interface EventoSeguridad {
+  time: string;
+  type: string;
 }
 
 // --- Corpus legal (docs/CONTRACTS.md §3) ---
