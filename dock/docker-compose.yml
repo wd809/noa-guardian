@@ -1,0 +1,25 @@
+# Guardian Dock v1 — ver docs/DOCK.md para el diseño completo.
+# v1 = un solo servicio (gateway + feeds + citizen en un proceso, cero
+# dependencias). brain (Muse Spark) y vision (SAM 3.1) se añaden como
+# servicios en el sprint sin cambiar los contratos.
+services:
+  gateway:
+    build: ./gateway
+    container_name: guardian-dock
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      CORPUS_DIR: /corpus
+      # Autenticación de aplicación (26-oct): define DOCK_TOKEN en un .env
+      # junto a este archivo (valor largo y aleatorio, fuera de git). Sin
+      # token, el Dock acepta peticiones de cualquier equipo que lo alcance
+      # — la red privada (LAN/Tailscale) es transporte, no autenticación.
+      # La PWA se empareja guardando el mismo token (ver app.js: dock_token).
+      DOCK_TOKEN: ${DOCK_TOKEN:-}
+    volumes:
+      # En el repo, el corpus vive en ../corpus. En un despliegue donde
+      # corpus/ quede junto a este archivo, define CORPUS_PATH=./corpus
+      # (p. ej. en un .env local del host).
+      - ${CORPUS_PATH:-../corpus}:/corpus:ro
+    restart: unless-stopped

@@ -1,0 +1,13 @@
+<header class="topbar">
+  <strong>{{ title() }}</strong>
+  <span class="estado">sin conexión</span>
+</header>
+<nav class="tabs">
+  <a routerLink="/sesion" routerLinkActive="activa">Sesión</a>
+  <a routerLink="/guardian" routerLinkActive="activa">Guardian</a>
+  <a routerLink="/citizen" routerLinkActive="activa">Citizen</a>
+  <a routerLink="/awareness" routerLinkActive="activa">Awareness</a>
+</nav>
+<main>
+  <router-outlet />
+</main>

@@ -1,0 +1,1 @@
+{"description":"Guardian Dock v1 — gateway único de NOA Guardian (alertas oficiales + Citizen sobre corpus verificado). Cero dependencias.","engines":{"node":">=20"},"name":"guardian-dock-gateway","private":true,"scripts":{"start":"node src/server.js"},"type":"module","version":"1.0.0"}
