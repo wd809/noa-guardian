@@ -111,6 +111,7 @@ export function loadCorpusFromDir(corpusDir: string): Corpus {
     docs.push(doc);
     let heading = meta.titulo;
     let buf: string[] = [];
+    let isPreamble = true;
     const flush = () => {
       const text = buf.join('\n').trim();
       if (text.length < 40) return;
@@ -119,9 +120,14 @@ export function loadCorpusFromDir(corpusDir: string): Corpus {
         heading,
         seccion: sectionLabel(heading),
         text,
-        normHeading: normalizeText(heading),
+        // El preámbulo (lo que cuelga del título de la pieza) es contexto y
+        // procedencia, no norma: no puntúa por su encabezado, solo por su
+        // texto. Sin esto, un título largo y descriptivo se convierte en un
+        // imán de conceptos y le gana a los fragmentos operativos.
+        normHeading: isPreamble ? '' : normalizeText(heading),
         normText: normalizeText(text),
       });
+      isPreamble = false;
     };
     for (const line of body.split('\n')) {
       const h = line.match(/^#{1,2}\s+(.+)$/);

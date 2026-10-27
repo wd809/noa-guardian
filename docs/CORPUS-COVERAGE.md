@@ -178,3 +178,19 @@ WD aportó su carpeta de Drive con los PDF oficiales del U.S. Code completo (Tí
 - **Título 42, secciones nuevas:** § 423(d) (definición de discapacidad), § 1382(a) (elegibilidad SSI; los montos vigentes se refieren a la fuente oficial por su ajuste anual), § 1395c (Medicare Parte A).
 
 **Verificación:** cada pasaje se contrastó frase por frase contra el HTM oficial de uscode.house.gov al release point vigente **PL 119-134** (corte 2026-10-20), descargado el 2026-10-27: **20/20 frases operativas idénticas** al texto de los PDF. El corpus queda en **17 piezas y 107 fragmentos**. Regresión: batería conductual de 9 preguntas reales (9/9 en la sección correcta con cita, incluida la abstención donde no hay respaldo) y suites legadas 15/15 · 11/11 · 13/13. Las 16 piezas previas conservan su verificación al corte PL 119-121; su pasada C8 al RP 119-134 queda programada.
+
+## Oleada 2 (2026-10-27) — «los derechos del ciudadano» ante la policía (dirección de WD)
+
+WD ordenó el énfasis: más que migración, Citizen debe defender al ciudadano en el encuentro cotidiano con la autoridad — el policía que se quiere pasar de la raya. La oleada entra con esa brújula:
+
+- **Pieza NUEVA `corpus/federal/constitucion-eeuu.md`** (pieza de transcripción, no compañera): Enmiendas **I** (expresión; con nota etiquetada como jurisprudencia sobre grabar a funcionarios en público), **II** (armas), **IV** (registros y cateos: causa probable y orden), **V** (silencio y debido proceso), **VI** (juicio justo y abogado) y **XIV § 1** (debido proceso e igual protección frente a los estados). Fuente: `constitution.pdf` (impresión GPO) de la biblioteca de WD, contrastada con el texto constitucional oficial del Senado (6/6 pasajes; la Enmienda I difiere solo en puntuación entre impresiones oficiales — las palabras son las mismas).
+- **§ 1983 en la pieza del Título 42**: la acción civil contra quien, bajo color de ley, priva a una persona de un derecho constitucional — la vía civil que acompaña al delito federal de § 242 (T. 18). Texto del HTM oficial al **release point PL 119-134**; su apertura coincide palabra por palabra con el PDF de la biblioteca.
+- **Corpus tras la oleada 2: 18 piezas, 115 fragmentos** (conteo del arranque del Dock).
+
+Tres ajustes de motor nacidos de esta oleada, con batería conductual como evidencia (aplicados en paridad al puerto Nest y al legado):
+
+1. **El preámbulo no puntúa por su encabezado**: lo que cuelga del título de una pieza es contexto/procedencia, no norma; un título largo se volvía un imán de conceptos y le ganaba a los fragmentos operativos.
+2. **Desempate por cobertura**: a igual puntuación gana el fragmento que cubre más conceptos de la pregunta (antes decidía el orden alfabético del archivo).
+3. Sinónimos del encuentro policial (registrar/cateo, silencio/callado, orden judicial, abogado, demandar, constitución/enmienda, entrar sin papeles) y ruido eliminado (`pasa`/`pasan` a stopwords; fuera las variantes genéricas `estados`/`unidos` → `states`/`united`).
+
+**Batería oleada 2 (6/6) + regresión oleada 1 y banco (9/9)**, en vivo contra el Dock compilado: silencio→Enmienda V · registrar el carro→Enmienda IV · grabar al policía→Enmienda I · demandar al funcionario→§ 1983 · abogado→Enmienda VI · igual protección→Enmienda XIV § 1 · naturalización→§ 1427 · sin papeles→§ 1182 · tarjeta de residencia→§ 1304 · felonía y armas→§ 922(g) · discapacidad→§ 423 · deportación→§ 1227 · grabar en PA→Wiretap § 5703 · salario→MWA Section 4 · divorcio→abstención NO_CUBIERTO.

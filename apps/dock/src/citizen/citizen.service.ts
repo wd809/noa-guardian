@@ -30,7 +30,7 @@ const STOPWORDS = new Set([
   'hace', 'esta', 'este', 'esto', 'estan', 'como', 'cómo', 'cuando',
   'cuándo', 'donde', 'dónde', 'cual', 'cuál', 'hay', 'ser', 'son', 'fue',
   'han', 'he', 'ha', 'sobre', 'entre', 'hasta', 'desde', 'mas', 'más',
-  'muy', 'sin', 'ley', 'legal', 'pregunta',
+  'muy', 'sin', 'ley', 'legal', 'pregunta', 'pasa', 'pasan',
   'the', 'of', 'and', 'or', 'to', 'in', 'an', 'is', 'are', 'shall',
   'be', 'by', 'for', 'with', 'on', 'at', 'as', 'it', 'its', 'this', 'that',
 ]);
@@ -127,8 +127,8 @@ const SYNONYMS = new Map<string, string[]>(
     residente: ['resident', 'residence'],
     indocumentado: ['inadmissible', 'without admission or parole'],
     indocumentada: ['inadmissible', 'without admission or parole'],
-    registro: ['registration', 'register'],
-    papeles: ['registration', 'evidence of registration'],
+    registro: ['registration', 'register', 'search'],
+    papeles: ['inadmissible', 'without admission', 'certificate of alien registration'],
     arresto: ['arrest', 'custody'],
     detenido: ['arrest', 'custody'],
     derechos: ['rights', 'right'],
@@ -138,7 +138,7 @@ const SYNONYMS = new Map<string, string[]>(
     condenado: ['convicted', 'conviction'],
     condena: ['conviction'],
     felonia: ['felony', 'felon'],
-    delito: ['offense', 'crime', 'felony'],
+    delito: ['offense', 'crime', 'felony', 'criminal'],
     beneficios: ['benefits', 'benefit'],
     beneficio: ['benefits', 'benefit'],
     jubilacion: ['old-age', 'retirement'],
@@ -149,14 +149,40 @@ const SYNONYMS = new Map<string, string[]>(
     ssi: ['supplemental security income'],
     ingresos: ['income'],
     familia: ['family', 'spouse', 'child'],
+    // --- Oleada 2 (2026-10-27): el encuentro con la policía ---
+    interroga: ['interrogation', 'witness against himself'],
+    interrogan: ['interrogation', 'witness against himself'],
+    derecho: ['right', 'rights'],
+    acusado: ['accused', 'prosecutions'],
+    acusan: ['accused', 'prosecutions'],
+    violo: ['deprivation', 'deprived'],
+    viola: ['deprivation', 'deprived'],
+    registrar: ['search', 'searched', 'seizure'],
+    cateo: ['search', 'frisk'],
+    silencio: ['silence', 'silent', 'witness against himself'],
+    callado: ['silent', 'silence', 'witness against himself', 'compelled'],
+    callada: ['silent', 'silence', 'witness against himself', 'compelled'],
+    consentir: ['consent'],
+    consiento: ['consent'],
+    orden: ['warrant', 'warrants'],
+    abogado: ['counsel', 'attorney'],
+    demandar: ['action at law', 'liable', 'redress'],
+    demandarlo: ['liable', 'action at law'],
+    demanda: ['action at law', 'suit'],
+    igual: ['equal'],
+    igualdad: ['equal protection', 'equal'],
+    constitucion: ['constitution', 'amendment', 'constitutional'],
+    enmienda: ['amendment'],
+    detencion: ['detention', 'seizure'],
     // --- Ajuste conductual oleada 1 (2026-10-27): formas verbales y temas nuevos ---
+    cuantos: ['at least', 'five'],
     anos: ['years'],
     vivir: ['resided', 'residence', 'living'],
-    estados: ['states'],
-    unidos: ['united'],
     cargar: ['carry', 'possession'],
     tarjeta: ['card', 'certificate'],
     siempre: ['at all times'],
+    entrar: ['admission', 'admitted'],
+    entro: ['admission', 'admitted', 'inadmissible'],
     deportar: ['deportable', 'removed'],
     vencio: ['failed to maintain', 'revoked'],
     vencida: ['failed to maintain', 'revoked'],
@@ -351,7 +377,9 @@ export class CitizenService {
     const ranked = corpus.chunks
       .map((chunk) => ({ chunk, ...scoreChunk(chunk, concepts, numbers) }))
       .filter((r) => r.conceptsFound > 0)
-      .sort((a, b) => b.score - a.score);
+      // A igual puntuación, gana el fragmento que cubre MÁS conceptos de la
+      // pregunta (desempate por cobertura, no por orden de archivo).
+      .sort((a, b) => b.score - a.score || b.conceptsFound - a.conceptsFound);
 
     const best = ranked[0];
     // Cobertura sobre conceptos ATESTIGUADOS en el corpus (corrección del

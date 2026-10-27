@@ -13,7 +13,7 @@ archivo_fuente: carpeta de Drive de WD — TITLE 8—ALIENS AND NATIONALITY-2024
 
 Relevancia Citizen (oleada 1, 2026-10-27): la ley federal de inmigración y naturalización (INA) en los temas que la gente pregunta en la calle — presencia sin admisión, motivos de deportación, el deber de portar el registro, la verificación de empleo (I-9) y los requisitos para hacerse ciudadano. Textos operativos verificados, palabra por palabra, en las secciones siguientes.
 
-## § 1182(a)(6)(A)(i) — Presente sin admisión o parole: inadmisible
+## § 1182(a)(6)(A)(i) — Entrar sin papeles: presente sin admisión o parole (inadmisible)
 
 «(A) Aliens present without admission or parole — (i) In general. An alien present in the United States without being admitted or paroled, or who arrives in the United States at any time or place other than as designated by the Attorney General, is inadmissible.»
 
