@@ -1,0 +1,9 @@
+# Nada de datos de usuario ni secretos en el repo, por diseño.
+.env
+*.key
+*.pem
+node_modules/
+.DS_Store
+# Capturas y material de prueba local
+captures/
+*.log
