@@ -9,8 +9,8 @@
  * cierra y los fallos vuelven a 0; si falla, se reabre otros 5 minutos.
  * Sin dependencias externas; el reloj es inyectable para las pruebas.
  */
-export type SourceName = 'NWS' | 'USGS' | 'NASA EONET';
-export type SourceState = 'ok' | 'degraded' | 'down';
+export type SourceName = 'NWS' | 'USGS' | 'NASA EONET' | 'PennDOT';
+export type SourceState = 'ok' | 'degraded' | 'down' | 'not_configured';
 
 export interface SourceHealth {
   state: SourceState;
@@ -71,6 +71,21 @@ export class CircuitBreakerRegistry {
     const e = this.entry(source);
     if (e.lastOkAt === null) return null;
     return Math.max(0, Math.floor((this.nowFn() - e.lastOkAt) / 60_000));
+  }
+
+  /** Salud de UNA fuente (también las que no están en el snapshot fijo). */
+  snapshotOne(source: SourceName): SourceHealth {
+    const now = this.nowFn();
+    const e = this.entry(source);
+    const open = e.openUntil > now;
+    return {
+      state: open ? 'down' : e.failures > 0 ? 'degraded' : 'ok',
+      consecutiveFailures: e.failures,
+      lastOkAt:
+        e.lastOkAt === null ? null : new Date(e.lastOkAt).toISOString(),
+      lastError: e.lastError,
+      circuitOpenUntil: open ? new Date(e.openUntil).toISOString() : null,
+    };
   }
 
   snapshot(): Record<SourceName, SourceHealth> {

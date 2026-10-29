@@ -10,9 +10,13 @@ import {
   CircuitBreakerRegistry,
   type SourceName,
 } from './circuit-breaker.js';
+import { FEEDS_FETCH, type FetchFn } from './feeds-fetch.js';
+import {
+  PENNDOT_NOT_CONFIGURED,
+  PennDotFeedsProvider,
+} from './penndot-feeds.provider.js';
 
-export const FEEDS_FETCH = Symbol('FEEDS_FETCH');
-export type FetchFn = typeof fetch;
+export { FEEDS_FETCH, type FetchFn };
 
 /**
  * Fuentes oficiales de alertas (porte fiel de dock/gateway/src/feeds.js,
@@ -50,9 +54,17 @@ export class OfficialFeedsProvider {
   /** Etapa D (D2): circuit breaker por fuente — 3 fallos abren 5 min. */
   private readonly breakers = new CircuitBreakerRegistry();
   private readonly fetchFn: FetchFn;
+  private readonly penndot: PennDotFeedsProvider;
 
-  constructor(@Optional() @Inject(FEEDS_FETCH) fetchFn?: FetchFn) {
+  constructor(
+    @Optional() @Inject(FEEDS_FETCH) fetchFn?: FetchFn,
+    @Optional() penndot?: PennDotFeedsProvider,
+  ) {
     this.fetchFn = fetchFn ?? globalThis.fetch;
+    // Sin inyección (pruebas unitarias), el proveedor de PennDOT nace con
+    // el mismo fetch y las credenciales del entorno: sin ellas, queda en
+    // modo «no configurado» declarado.
+    this.penndot = penndot ?? new PennDotFeedsProvider(this.fetchFn);
   }
 
   private async fetchJson(
@@ -183,6 +195,7 @@ export class OfficialFeedsProvider {
     ['NWS', (lat, lon) => this.fromNWS(lat, lon)],
     ['USGS', (lat, lon) => this.fromUSGS(lat, lon)],
     ['NASA EONET', (lat, lon) => this.fromEONET(lat, lon)],
+    ['PennDOT', (lat, lon) => this.penndot.liveEvents(lat, lon)],
   ];
 
   async getAlerts(lat: number, lon: number): Promise<AlertasRespuesta> {
@@ -215,7 +228,18 @@ export class OfficialFeedsProvider {
         // Fallo declarado, nunca rellenado (contrato §2).
         const reason: unknown = r.reason;
         const msg = reason instanceof Error ? reason.message : String(reason);
-        if (msg === '__circuit_open__') {
+        if (msg === PENNDOT_NOT_CONFIGURED) {
+          // Estado declarado, NO un fallo: el acceso a PennDOT sigue en
+          // trámite. No alimenta el circuit breaker ni cuenta como caída.
+          sources[name] = {
+            ok: false,
+            count: 0,
+            error:
+              'PennDOT RCRS: acceso solicitado; credenciales en trámite. ' +
+              'La fuente aún no aporta datos (no es un fallo).',
+            notConfigured: true,
+          };
+        } else if (msg === '__circuit_open__') {
           sources[name] = {
             ok: false,
             count: 0,
@@ -253,18 +277,34 @@ export class OfficialFeedsProvider {
 
   /** Salud viva de las fuentes (GET /health/sources): sin caché de por medio. */
   sourcesHealth(): FuentesSaludRespuesta['sources'] {
-    return this.breakers.snapshot();
+    const base = this.breakers.snapshot();
+    // PennDOT no está en el snapshot fijo del breaker: su estado se
+    // compone aquí — «not_configured» hasta que haya credenciales.
+    return {
+      ...base,
+      PennDOT: this.penndot.configured
+        ? this.breakers.snapshotOne('PennDOT')
+        : {
+            state: 'not_configured',
+            consecutiveFailures: 0,
+            lastOkAt: null,
+            lastError: null,
+            circuitOpenUntil: null,
+          },
+    };
   }
 
   feedsStatus(): {
     configured: string[];
     cacheEntries: number;
     cacheTtlSeconds: number;
+    penndot: string;
   } {
     return {
       configured: this.sourcesList.map(([name]) => name),
       cacheEntries: this.cache.size,
       cacheTtlSeconds: CACHE_TTL_MS / 1000,
+      penndot: this.penndot.configured ? 'configured' : 'not_configured',
     };
   }
 }

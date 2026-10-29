@@ -80,3 +80,17 @@ Sin verificación, la entrega se devuelve.
 - `FuenteEstado` gana dos campos opcionales: `circuitOpen` y `minutesSinceOk`. Cuando el circuito está abierto, la fuente no se consulta y el hueco se declara con ese error — jamás se rellena.
 - Límites de ritmo por IP (429 al superarlos): `GET /alerts` 30/min · `POST /ask` 15/min · resto 60/min. Tras 5 tokens inválidos en 60 s, la IP queda bloqueada 15 min (429 `too_many_auth_failures`) antes de cualquier otra comprobación.
 - Todas las respuestas llevan `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`.
+- **PennDOT RCRS (Etapa D, 2026-10-29):** `FuenteAlerta` gana `'PennDOT'`; `FuenteEstado` gana `notConfigured?: boolean` y `FuenteSalud.state` gana `'not_configured'`. Sin credenciales PDAuth (entorno `PENNDOT_USER`/`PENNDOT_PASS`), la fuente aparece en `sources` como no configurada — estado declarado, no fallo: no alimenta el circuit breaker ni convierte la evaluación en «no despejado». Con credenciales, aporta incidentes viales oficiales en un radio de 50 km (`GET https://eventsdata.dot.pa.gov/liveEvents`, Basic Auth; severidad: fatalidad/hazmat → Severe, vía cerrada → Moderate, resto → Minor; enlace público 511pa.com).
+
+## Etapa D — Puente teléfono ↔ Dock (D5, 2026-10-29; diseño Spark 1.3, ADR-023)
+
+- `POST /bridge/messages` (token de emparejamiento, como /ask): un solo endpoint con el sobre v1 `{v, msgId, type, deviceId, ts, payload}`. Tipos de entrada: `heartbeat`, `ask`, `alerts_poll`; respuestas con el mismo sobre: `heartbeat_ack`, `answer`, `alerts_data`. Tipos y campos: sección «Puente teléfono ↔ Dock» de `packages/contracts`.
+- Validación previa a todo procesamiento: versión mayor 1, `msgId` UUID v4, `deviceId` `[a-z0-9-]{4,64}`, `ts` con desfase ≤ 300 s, mensaje ≤ 64 KB y campos obligatorios por tipo. Inválido → **400** `{code: "INVALID_MESSAGE", message, details: [{field, issue}]}`. `msgId` repetido en el mismo dispositivo → **409** `DUPLICATE_MESSAGE`.
+- Latido: cadencia 30 s; el Dock marca el dispositivo `stale` a los 90 s sin mensajes y `gone` a los 300 s (cualquier mensaje válido cuenta como presencia). `GET /bridge/devices` devuelve el registro con el estado calculado.
+- Versionado: aditivo dentro de la v1 (campos nuevos siempre opcionales; nunca renombrar ni retirar).
+
+## Etapa D — Awareness por visión (D6, 2026-10-29; diseño Spark 1.3, ADR-024)
+
+- `POST /see` (token de emparejamiento): cuerpo `{image, question?}` — imagen como data URI `image/jpeg|png|webp` ≤ 5 MB (o base64 crudo, se asume jpeg); pregunta opcional ≤ 200 caracteres. La imagen no se almacena.
+- Respuesta 200: `SeeRespuesta` (contratos): descripción hablada, personas solo como presencia/conteo, peligros, textos legibles, confianza y `usage` con costo a tarifas Standard. `source: "model"` siempre declarado.
+- Errores declarados: imagen inválida → 400 `invalid_image`; sin `META_MODEL_API_KEY` → 501 `not_configured`; API de visión caída → 502 `vision_unavailable`; salida del modelo fuera de esquema → 502 `vision_output_invalid` (se descarta entera; jamás se devuelve contenido crudo del modelo).

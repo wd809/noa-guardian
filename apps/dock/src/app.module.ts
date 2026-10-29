@@ -9,6 +9,7 @@ import { CitizenModule } from './citizen/citizen.module.js';
 import { ConfigModule } from './config/config.module.js';
 import { ContainmentModule } from './containment/containment.module.js';
 import { GuardianModule } from './guardian/guardian.module.js';
+import { BridgeModule } from './bridge/bridge.module.js';
 import { ObservabilityModule } from './observability/observability.module.js';
 import { ProvidersModule } from './providers/providers.module.js';
 import { AbusePreventionGuard } from './auth/abuse-prevention.guard.js';
@@ -25,6 +26,7 @@ import { DockTokenGuard } from './auth/dock-token.guard.js';
     BudgetModule,
     ObservabilityModule,
     ContainmentModule,
+    BridgeModule,
   ],
   controllers: [AppController],
   providers: [

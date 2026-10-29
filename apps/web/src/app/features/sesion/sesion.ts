@@ -13,6 +13,31 @@ import { BudgetStateService } from '../../core/budget-state.service';
       }
       <button type="button" (click)="probar()">Probar conexión con el Dock</button>
 
+      <h3>Emparejar con tu Dock</h3>
+      <p>
+        La dirección del Dock en tu red (p. ej. http://192.168.1.50:3000) y su
+        token. Se guarda en este dispositivo.
+      </p>
+      <label>
+        Dirección del Dock
+        <input
+          type="text"
+          [value]="dockUrl()"
+          (input)="dockUrl.set($any($event.target).value)"
+          placeholder="http://192.168.1.50:3000"
+        />
+      </label>
+      <label>
+        Token
+        <input
+          type="password"
+          [value]="dockToken()"
+          (input)="dockToken.set($any($event.target).value)"
+          placeholder="Token del Dock"
+        />
+      </label>
+      <button type="button" (click)="guardar()">Guardar y probar</button>
+
       <h3>Presupuesto de API</h3>
       @if (presupuesto().actualizadoEn) {
         <p>
@@ -23,7 +48,7 @@ import { BudgetStateService } from '../../core/budget-state.service';
       } @else {
         <p>Sin datos del contador todavía — el contador real llega en la Etapa D.</p>
       }
-      <p><em>Placeholder honesto de la Etapa A: sin sesión emparejada todavía.</em></p>
+      <p><em>El emparejamiento se guarda solo en este dispositivo; el token nunca sale hacia otro destino que tu Dock.</em></p>
     </section>
   `,
 })
@@ -34,6 +59,15 @@ export class Sesion {
   protected readonly estado = signal('sin conexión');
   protected readonly detalle = signal('');
   protected readonly presupuesto = this.budget.estado;
+  protected readonly dockUrl = signal(this.dock.baseUrl());
+  protected readonly dockToken = signal(this.dock.token() ?? '');
+
+  protected async guardar(): Promise<void> {
+    const url = this.dockUrl().trim();
+    if (url) this.dock.setBaseUrl(url);
+    this.dock.setToken(this.dockToken().trim() || null);
+    await this.probar();
+  }
 
   protected async probar(): Promise<void> {
     try {

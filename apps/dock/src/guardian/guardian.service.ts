@@ -129,15 +129,27 @@ export function buildGuardianBody(
   const live = liveAlerts(payload.alerts || []);
   const expiredExcluded = (payload.alerts || []).length - live.length;
   const { total, bySeverity, sorted, proactive } = assessAlerts(live);
+  // Una fuente «en trámite» (notConfigured) no es una fuente caída: no
+  // entra en los fallos ni convierte la respuesta en un no-despeje.
   const failedSources = Object.entries(sources || {})
-    .filter(([, s]) => !s.ok)
+    .filter(([, s]) => !s.ok && !s.notConfigured)
+    .map(([n]) => n);
+  const pendingSources = Object.entries(sources || {})
+    .filter(([, s]) => s.notConfigured)
     .map(([n]) => n);
   const okSources = Object.entries(sources || {})
     .filter(([, s]) => s.ok)
     .map(([n]) => n);
   const allFailed =
     failedSources.length > 0 &&
-    Object.keys(sources || {}).length === failedSources.length;
+    Object.keys(sources || {}).length - pendingSources.length ===
+      failedSources.length;
+
+  // Nota informativa por fuente en trámite de acceso (no es un fallo).
+  const pendingLines = pendingSources.map(
+    (n) =>
+      `Nota: ${n} está en trámite de acceso y todavía no aporta datos.`,
+  );
 
   // Etapa D (D2): frase explícita por fuente con el circuito abierto —
   // qué no se puede verificar y desde cuándo falta el dato válido.
@@ -145,6 +157,7 @@ export function buildGuardianBody(
     NWS: 'el clima severo',
     USGS: 'los sismos',
     'NASA EONET': 'los eventos naturales',
+    PennDOT: 'los incidentes viales de Pensilvania',
   };
   const circuitLines = Object.entries(sources || {})
     .filter(([, s]) => !s.ok && s.circuitOpen)
@@ -214,7 +227,12 @@ export function buildGuardianBody(
   }
 
   return {
-    text: [...head, core, ...(allFailed ? [] : circuitLines)].join('\n'),
+    text: [
+      ...head,
+      core,
+      ...pendingLines,
+      ...(allFailed ? [] : circuitLines),
+    ].join('\n'),
     citations: allFailed ? [] : sorted.slice(0, MAX_LISTED).map(citationOf),
     source: 'feeds',
     usage: { model: 'dock-guardian-feeds-v1', inputTokens: 0, outputTokens: 0, costUsd: 0 },

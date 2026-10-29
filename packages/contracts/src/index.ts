@@ -46,7 +46,7 @@ export interface GuardianAnswer {
 
 // --- Alertas oficiales (docs/CONTRACTS.md §2) ---
 
-export type FuenteAlerta = 'NWS' | 'USGS' | 'NASA EONET';
+export type FuenteAlerta = 'NWS' | 'USGS' | 'NASA EONET' | 'PennDOT';
 
 export interface OfficialAlert {
   event: string;
@@ -72,11 +72,17 @@ export interface FuenteEstado {
   circuitOpen?: boolean;
   /** Etapa D (aditivo): minutos desde el último dato válido de la fuente. */
   minutesSinceOk?: number | null;
+  /**
+   * Etapa D (aditivo): la fuente está integrada pero su acceso sigue en
+   * trámite (p. ej. PennDOT RCRS sin credenciales todavía). No es un
+   * fallo: es un estado declarado, y Guardian lo dice como tal.
+   */
+  notConfigured?: boolean;
 }
 
 /** Salud de una fuente oficial (GET /health/sources, Etapa D). */
 export interface FuenteSalud {
-  state: 'ok' | 'degraded' | 'down';
+  state: 'ok' | 'degraded' | 'down' | 'not_configured';
   consecutiveFailures: number;
   lastOkAt: string | null;
   lastError: string | null;
@@ -181,4 +187,117 @@ export interface ResultadoProveedor<T> {
   data?: T;
   error?: string;
   usage?: UsoModelo;
+}
+
+// --- Puente teléfono ↔ Dock (Etapa D, D5; diseño Spark 1.3, 2026-10-29) ---
+//
+// Sobre común de todo mensaje del puente. Versionado aditivo: dentro de la
+// v1 jamás se renombra ni se retira un campo; los campos nuevos son siempre
+// opcionales y el mayor `v` solo cambia con un cambio incompatible.
+
+export type BridgeMessageType =
+  | 'heartbeat'
+  | 'heartbeat_ack'
+  | 'ask'
+  | 'alerts_poll'
+  | 'answer'
+  | 'alerts_data';
+
+export interface BridgeEnvelope<T = Record<string, unknown>> {
+  /** Versión del contrato, "MAJOR.MINOR" ("1.0" en la v1). */
+  v: string;
+  /** UUID v4 generado por el emisor; clave de idempotencia. */
+  msgId: string;
+  type: BridgeMessageType;
+  /** Identificador del dispositivo: [a-z0-9-]{4,64}. */
+  deviceId: string;
+  /** Marca de envío RFC 3339 UTC con milisegundos. */
+  ts: string;
+  payload: T;
+}
+
+export interface HeartbeatPayload {
+  batteryPct: number;
+  net: 'wifi' | 'cellular' | 'offline';
+  glassesConnected: boolean;
+  loc?: { lat: number; lon: number; accM: number };
+}
+
+export type BridgeSessionState = 'active' | 'stale' | 'gone';
+
+export interface HeartbeatAckPayload {
+  serverTime: string;
+  sessionState: BridgeSessionState;
+  /** Segundos sin latido hasta que el Dock marca el dispositivo `stale`. */
+  staleAfterSec: number;
+  /** Segundos sin latido hasta que el Dock lo marca `gone`. */
+  goneAfterSec: number;
+}
+
+export interface BridgeAskPayload {
+  utterance: string;
+  lang?: string;
+  dialogId?: string;
+  lat?: number;
+  lon?: number;
+}
+
+export interface BridgeAnswerPayload {
+  inReplyTo: string;
+  replyText: string;
+  source: FuenteRespuesta;
+  citations: string[];
+}
+
+export interface BridgeAlertsPollPayload {
+  lat?: number;
+  lon?: number;
+}
+
+export interface BridgeAlertsDataPayload {
+  inReplyTo: string;
+  fetchedAt: string;
+  alerts: OfficialAlert[];
+}
+
+/** Error declarado del puente: jamás una pila ni un 500 por un payload malo. */
+export interface BridgeErrorBody {
+  code: 'INVALID_MESSAGE' | 'DUPLICATE_MESSAGE';
+  message: string;
+  details: Array<{ field: string; issue: string }>;
+}
+
+/** Vista del registro de dispositivos del Dock (GET /bridge/devices). */
+export interface BridgeDeviceView {
+  deviceId: string;
+  lastSeenAt: string;
+  state: BridgeSessionState;
+  lastNet: string | null;
+  batteryPct: number | null;
+}
+
+// --- Awareness por visión (Etapa D, D6; prompt y esquema de Spark 1.3) ---
+
+/** Solicitud de POST /see: una foto y una pregunta opcional. */
+export interface SeeSolicitud {
+  /** Imagen como data URI (image/jpeg, image/png o image/webp) o base64. */
+  image: string;
+  question?: string;
+}
+
+/**
+ * Respuesta de POST /see. La salida del modelo se valida contra este
+ * esquema antes de hablarse: si no cumple, el Dock no la usa (regla de
+ * Spark: la salida del modelo es dato no confiable).
+ */
+export interface SeeRespuesta {
+  description: string;
+  /** Personas solo como presencia: jamás identidad. */
+  peoplePresent: boolean;
+  peopleCount: number | null;
+  hazards: string[];
+  readableText: string[];
+  confidence: 'low' | 'medium' | 'high';
+  source: 'model';
+  usage: UsoModelo;
 }

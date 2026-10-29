@@ -107,3 +107,21 @@ describe('buildGuardianBody — honestidad de la evaluación', () => {
     expect(body.guardian.point.defaulted).toBe(true);
   });
 });
+
+describe('buildGuardianBody — fuente en trámite (PennDOT)', () => {
+  it('PennDOT en trámite NO convierte el cero en «no despejado»: se anota como trámite', () => {
+    const sources = {
+      ...ALL_OK,
+      PennDOT: {
+        ok: false,
+        count: 0,
+        error: 'PennDOT RCRS: acceso solicitado; credenciales en trámite.',
+        notConfigured: true,
+      },
+    };
+    const body = buildGuardianBody(payload([], sources), POINT);
+    expect(body.text).toContain('Sin alertas oficiales activas');
+    expect(body.text).toContain('en trámite de acceso');
+    expect(body.text).not.toContain('no es un «todo despejado»');
+  });
+});

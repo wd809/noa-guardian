@@ -17,6 +17,7 @@ export interface DockHealth extends HealthResponse {
     configured: string[];
     cacheEntries: number;
     cacheTtlSeconds: number;
+    penndot: string;
   };
   endpoints: Record<string, string>;
 }
@@ -50,7 +51,8 @@ export class AppService {
       endpoints: {
         'GET /health/sources':
           'ok (salud por fuente + circuit breaker, Etapa D)',
-        'GET /alerts': 'ok (NWS · USGS · NASA EONET)',
+        'GET /alerts':
+          'ok (NWS · USGS · NASA EONET · PennDOT RCRS en trámite de credenciales)',
         'POST /ask':
           'guardian ok · citizen ok (corpus verificado) · awareness 501 (Etapa D)',
         'POST /see': '501 stub (SAM 3.1, Etapa D — puerta de verificación)',

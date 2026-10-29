@@ -111,13 +111,13 @@ describe('Dock (integración, Etapa B)', () => {
       .expect(501);
   });
 
-  it('POST /see → 501 declarado (el Dock no procesa imágenes)', async () => {
+  it('POST /see → 501 declarado not_configured sin llave (Etapa D, D6)', async () => {
     const res = await request(app.getHttpServer())
       .post('/see')
       .set(TOKEN)
-      .send({})
+      .send({ image: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAABAAEDASIAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AvwEf/9k=' })
       .expect(501);
-    expect(res.body.error).toBe('not_implemented');
+    expect(res.body.error).toBe('not_configured');
   });
 
   it(
