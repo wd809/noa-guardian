@@ -3,10 +3,12 @@ import {
   ExecutionContext,
   HttpException,
   Injectable,
+  Optional,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { timingSafeEqual } from 'node:crypto';
 import { DockConfigService } from '../config/dock-config.service.js';
+import { AbuseTrackerService } from './abuse-tracker.service.js';
 import { IS_PUBLIC_KEY } from './public.decorator.js';
 
 /**
@@ -21,6 +23,9 @@ export class DockTokenGuard implements CanActivate {
   constructor(
     private readonly config: DockConfigService,
     private readonly reflector: Reflector,
+    // Etapa D (D3): cada 401 alimenta el bloqueo preventivo anti-fuerza
+    // bruta. Opcional para no romper usos aislados de la guardia.
+    @Optional() private readonly abuse?: AbuseTrackerService,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
@@ -33,12 +38,14 @@ export class DockTokenGuard implements CanActivate {
 
     const req = context.switchToHttp().getRequest<{
       headers: Record<string, string | string[] | undefined>;
+      ip?: string;
     }>();
     const given = String(req.headers['x-dock-token'] ?? '');
     const a = Buffer.from(given);
     const b = Buffer.from(this.config.dockToken);
     const ok = a.length === b.length && timingSafeEqual(a, b);
     if (!ok) {
+      this.abuse?.recordAuthFailure(req.ip ?? 'unknown');
       throw new HttpException(
         {
           error: 'unauthorized',

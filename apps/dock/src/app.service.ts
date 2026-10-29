@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import type { HealthResponse } from '@noa-guardian/contracts';
+import type {
+  FuentesSaludRespuesta,
+  HealthResponse,
+} from '@noa-guardian/contracts';
 import { CorpusService } from './citizen/corpus.service.js';
 import { OfficialFeedsProvider } from './providers/official-feeds.provider.js';
 
@@ -29,6 +32,13 @@ export class AppService {
     return 'Guardian Dock (NestJS) — NOA Guardian. Ver GET /health.';
   }
 
+  getSourcesHealth(): FuentesSaludRespuesta {
+    return {
+      sources: this.feeds.sourcesHealth(),
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
   getHealth(): DockHealth {
     return {
       status: 'ok',
@@ -38,10 +48,12 @@ export class AppService {
       corpus: this.corpus.status(),
       feeds: this.feeds.feedsStatus(),
       endpoints: {
+        'GET /health/sources':
+          'ok (salud por fuente + circuit breaker, Etapa D)',
         'GET /alerts': 'ok (NWS · USGS · NASA EONET)',
         'POST /ask':
           'guardian ok · citizen ok (corpus verificado) · awareness 501 (Etapa D)',
-        'POST /see': '501 stub (SAM 3.1, Etapa D)',
+        'POST /see': '501 stub (SAM 3.1, Etapa D — puerta de verificación)',
         'POST /containment/reactivate': 'ok (solo propietario, con token)',
       },
     };

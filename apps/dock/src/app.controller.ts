@@ -1,4 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
+import type { FuentesSaludRespuesta } from '@noa-guardian/contracts';
 import { AppService } from './app.service.js';
 import type { DockHealth } from './app.service.js';
 import { Public } from './auth/public.decorator.js';
@@ -18,5 +19,14 @@ export class AppController {
   @Get('health')
   getHealth(): DockHealth {
     return this.appService.getHealth();
+  }
+
+  // Salud por fuente oficial (Etapa D, D2): estado del circuit breaker,
+  // último dato válido y último error. Sin datos personales: pública como
+  // /health, y es lo que alimenta el semáforo de fuentes de la app.
+  @Public()
+  @Get('health/sources')
+  getSourcesHealth(): FuentesSaludRespuesta {
+    return this.appService.getSourcesHealth();
   }
 }

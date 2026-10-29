@@ -3,8 +3,13 @@ import type {
   AlertasRespuesta,
   FuenteAlerta,
   FuenteEstado,
+  FuentesSaludRespuesta,
   OfficialAlert,
 } from '@noa-guardian/contracts';
+import {
+  CircuitBreakerRegistry,
+  type SourceName,
+} from './circuit-breaker.js';
 
 export const FEEDS_FETCH = Symbol('FEEDS_FETCH');
 export type FetchFn = typeof fetch;
@@ -42,6 +47,8 @@ export class OfficialFeedsProvider {
     string,
     { at: number; payload: AlertasRespuesta }
   >();
+  /** Etapa D (D2): circuit breaker por fuente — 3 fallos abren 5 min. */
+  private readonly breakers = new CircuitBreakerRegistry();
   private readonly fetchFn: FetchFn;
 
   constructor(@Optional() @Inject(FEEDS_FETCH) fetchFn?: FetchFn) {
@@ -187,24 +194,50 @@ export class OfficialFeedsProvider {
         cache: { hit: true, ttlSeconds: CACHE_TTL_MS / 1000 },
       };
     }
+    // Con el circuito abierto ni se llama a la fuente: el hueco se
+    // declara igual que un fallo, con su marca de circuito (contrato §2).
     const settled = await Promise.allSettled(
-      this.sourcesList.map(([, fn]) => fn(lat, lon)),
+      this.sourcesList.map(([name, fn]) =>
+        this.breakers.isOpen(name as SourceName)
+          ? Promise.reject(new Error('__circuit_open__'))
+          : fn(lat, lon),
+      ),
     );
     const alerts: OfficialAlert[] = [];
     const sources: Record<string, FuenteEstado> = {};
     settled.forEach((r, i) => {
       const name = this.sourcesList[i][0];
       if (r.status === 'fulfilled') {
+        this.breakers.recordSuccess(name as SourceName);
         sources[name] = { ok: true, count: r.value.length };
         alerts.push(...r.value);
       } else {
         // Fallo declarado, nunca rellenado (contrato §2).
         const reason: unknown = r.reason;
-        sources[name] = {
-          ok: false,
-          count: 0,
-          error: reason instanceof Error ? reason.message : String(reason),
-        };
+        const msg = reason instanceof Error ? reason.message : String(reason);
+        if (msg === '__circuit_open__') {
+          sources[name] = {
+            ok: false,
+            count: 0,
+            error:
+              'Circuito abierto por fallos consecutivos: la fuente no se ' +
+              'consultó en esta ronda (reintento automático en minutos).',
+            circuitOpen: true,
+            minutesSinceOk: this.breakers.minutesSinceLastOk(
+              name as SourceName,
+            ),
+          };
+        } else {
+          this.breakers.recordFailure(name as SourceName, msg);
+          const estado: FuenteEstado = { ok: false, count: 0, error: msg };
+          if (this.breakers.isOpen(name as SourceName)) {
+            estado.circuitOpen = true;
+            estado.minutesSinceOk = this.breakers.minutesSinceLastOk(
+              name as SourceName,
+            );
+          }
+          sources[name] = estado;
+        }
       }
     });
     const payload: AlertasRespuesta = {
@@ -216,6 +249,11 @@ export class OfficialFeedsProvider {
     };
     this.cache.set(key, { at: Date.now(), payload });
     return payload;
+  }
+
+  /** Salud viva de las fuentes (GET /health/sources): sin caché de por medio. */
+  sourcesHealth(): FuentesSaludRespuesta['sources'] {
+    return this.breakers.snapshot();
   }
 
   feedsStatus(): {

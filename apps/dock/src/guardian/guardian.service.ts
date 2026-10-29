@@ -139,6 +139,26 @@ export function buildGuardianBody(
     failedSources.length > 0 &&
     Object.keys(sources || {}).length === failedSources.length;
 
+  // Etapa D (D2): frase explícita por fuente con el circuito abierto —
+  // qué no se puede verificar y desde cuándo falta el dato válido.
+  const DOMAIN: Record<string, string> = {
+    NWS: 'el clima severo',
+    USGS: 'los sismos',
+    'NASA EONET': 'los eventos naturales',
+  };
+  const circuitLines = Object.entries(sources || {})
+    .filter(([, s]) => !s.ok && s.circuitOpen)
+    .map(([n, s]) => {
+      const hace =
+        s.minutesSinceOk === null || s.minutesSinceOk === undefined
+          ? 'sin un último dato válido registrado'
+          : `hace ${s.minutesSinceOk} min`;
+      return (
+        `⚠ Fuente ${n} no disponible (${hace}): no puedo verificar ` +
+        `${DOMAIN[n] ?? 'esa fuente'} y no asumo que estés seguro en eso.`
+      );
+    });
+
   const head: string[] = [];
   if (pointInfo.defaulted) {
     head.push(
@@ -194,7 +214,7 @@ export function buildGuardianBody(
   }
 
   return {
-    text: [...head, core].join('\n'),
+    text: [...head, core, ...(allFailed ? [] : circuitLines)].join('\n'),
     citations: allFailed ? [] : sorted.slice(0, MAX_LISTED).map(citationOf),
     source: 'feeds',
     usage: { model: 'dock-guardian-feeds-v1', inputTokens: 0, outputTokens: 0, costUsd: 0 },

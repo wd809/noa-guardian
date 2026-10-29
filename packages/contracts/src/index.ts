@@ -68,6 +68,25 @@ export interface FuenteEstado {
   ok: boolean;
   count: number;
   error?: string;
+  /** Etapa D (aditivo): el circuit breaker de la fuente está abierto. */
+  circuitOpen?: boolean;
+  /** Etapa D (aditivo): minutos desde el último dato válido de la fuente. */
+  minutesSinceOk?: number | null;
+}
+
+/** Salud de una fuente oficial (GET /health/sources, Etapa D). */
+export interface FuenteSalud {
+  state: 'ok' | 'degraded' | 'down';
+  consecutiveFailures: number;
+  lastOkAt: string | null;
+  lastError: string | null;
+  circuitOpenUntil: string | null;
+}
+
+/** Respuesta de GET /health/sources. */
+export interface FuentesSaludRespuesta {
+  sources: Record<string, FuenteSalud>;
+  generatedAt: string;
 }
 
 /** Respuesta de GET /alerts (contrato §2 ampliado). */

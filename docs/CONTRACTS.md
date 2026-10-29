@@ -73,3 +73,10 @@ Toda entrega incluye, en este orden:
 4. Riesgos o bloqueos abiertos.
 
 Sin verificación, la entrega se devuelve.
+
+## Etapa D — adiciones (2026-10-29, todo aditivo)
+
+- `GET /health/sources` (público): `{ sources: { <fuente>: { state: "ok"|"degraded"|"down", consecutiveFailures, lastOkAt, lastError, circuitOpenUntil } }, generatedAt }`. `down` = circuit breaker abierto (3 fallos consecutivos, 5 min).
+- `FuenteEstado` gana dos campos opcionales: `circuitOpen` y `minutesSinceOk`. Cuando el circuito está abierto, la fuente no se consulta y el hueco se declara con ese error — jamás se rellena.
+- Límites de ritmo por IP (429 al superarlos): `GET /alerts` 30/min · `POST /ask` 15/min · resto 60/min. Tras 5 tokens inválidos en 60 s, la IP queda bloqueada 15 min (429 `too_many_auth_failures`) antes de cualquier otra comprobación.
+- Todas las respuestas llevan `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`.
