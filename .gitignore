@@ -1,0 +1,23 @@
+# Nada de datos de usuario ni secretos en el repo, por diseño.
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.jks
+*.keystore
+node_modules/
+.DS_Store
+# Capturas y material de prueba local
+captures/
+*.log
+dist/
+*.tsbuildinfo
+coverage/
+.angular/
+# Artefactos Android generados (el APK se compila en tu PC)
+apps/web/android/app/build/
+apps/web/android/.gradle/
+apps/web/android/app/release/
+*.apk
+*.aab

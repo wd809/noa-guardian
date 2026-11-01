@@ -1,0 +1,23 @@
+<header class="topbar">
+  <div class="wrap bar">
+    <strong class="brand">{{ title() }}</strong>
+    <span class="estado" [attr.data-estado]="estado()">{{ estado() }}</span>
+  </div>
+</header>
+@if (showLegalBanner()) {
+  <p class="legal-banner" role="note">
+    {{ legalBanner }}
+    <a routerLink="/aviso-legal">Read notice</a>
+    <button type="button" (click)="dismissLegalBanner()">Got it</button>
+  </p>
+}
+<nav class="tabs" aria-label="Primary">
+  <a routerLink="/sesion" routerLinkActive="activa">Session</a>
+  <a routerLink="/guardian" routerLinkActive="activa">Guardian</a>
+  <a routerLink="/citizen" routerLinkActive="activa">Citizen</a>
+  <a routerLink="/awareness" routerLinkActive="activa">Awareness</a>
+  <a routerLink="/aviso-legal" routerLinkActive="activa">Legal notice</a>
+</nav>
+<main>
+  <router-outlet />
+</main>

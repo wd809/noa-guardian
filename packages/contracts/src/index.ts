@@ -1,0 +1,335 @@
+// NOA Guardian — contratos compartidos entre la web (Angular) y el Dock (NestJS).
+// SOLO definiciones de tipos: cero lógica, cero dependencias, cero valores.
+// La fuente de verdad narrativa es docs/CONTRACTS.md; este paquete la formaliza.
+
+// --- Consulta al cerebro (docs/CONTRACTS.md §1) ---
+
+export type ModoOperacion = 'guardian' | 'citizen' | 'awareness';
+
+export interface Ubicacion {
+  lat: number;
+  lon: number;
+}
+
+export interface GuardianAskInput {
+  mode: ModoOperacion;
+  /** Pregunta del usuario (la voz ya viene transcrita). */
+  text: string;
+  /** SOLO en memoria, nunca persistida. */
+  imageBase64?: string;
+  /** Solo si el usuario lo autorizó en la sesión. */
+  location?: Ubicacion;
+}
+
+/** 'feeds' = compuesto determinista desde las fuentes oficiales (modo
+ * guardian, docs/GUARDIAN-MODE-V1.md); 'mock' se etiqueta siempre. */
+export type FuenteRespuesta = 'model' | 'corpus' | 'feeds' | 'mock';
+
+export interface UsoModelo {
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  costUsd: number;
+}
+
+export interface GuardianAnswer {
+  /** Respuesta lista para mostrar y para TTS. */
+  text: string;
+  /** Obligatorio en modo citizen; [] en los demás modos. */
+  citations: string[];
+  /** P. ej. "Pensilvania, EE. UU." */
+  jurisdiction?: string;
+  /** Honestidad de demo: el mock se etiqueta. */
+  source: FuenteRespuesta;
+  usage: UsoModelo;
+}
+
+// --- Alertas oficiales (docs/CONTRACTS.md §2) ---
+
+export type FuenteAlerta =
+  | 'NWS'
+  | 'USGS'
+  | 'NASA EONET'
+  | 'PennDOT'
+  | 'AirNow'
+  | 'USGS Water';
+
+export interface OfficialAlert {
+  event: string;
+  severity: string;
+  headline: string;
+  area: string;
+  /** Inicio de vigencia (ISO) cuando la fuente lo publica. */
+  starts?: string | null;
+  /** Fin de vigencia (ISO); null = la fuente no lo define. */
+  ends?: string | null;
+  /** Solo fuentes oficiales. */
+  source: FuenteAlerta;
+  /** Enlace oficial de la alerta. */
+  url?: string;
+}
+
+/** Estado declarado de una fuente: si cae, se dice — jamás se rellena. */
+export interface FuenteEstado {
+  ok: boolean;
+  count: number;
+  error?: string;
+  /** Etapa D (aditivo): el circuit breaker de la fuente está abierto. */
+  circuitOpen?: boolean;
+  /** Etapa D (aditivo): minutos desde el último dato válido de la fuente. */
+  minutesSinceOk?: number | null;
+  /**
+   * Etapa D (aditivo): la fuente está integrada pero su acceso sigue en
+   * trámite (p. ej. PennDOT RCRS sin credenciales todavía). No es un
+   * fallo: es un estado declarado, y Guardian lo dice como tal.
+   */
+  notConfigured?: boolean;
+}
+
+/** Salud de una fuente oficial (GET /health/sources, Etapa D). */
+export interface FuenteSalud {
+  state: 'ok' | 'degraded' | 'down' | 'not_configured';
+  consecutiveFailures: number;
+  lastOkAt: string | null;
+  lastError: string | null;
+  circuitOpenUntil: string | null;
+  /**
+   * Última lectura verificada en una línea (p. ej. "Schuylkill 3.2 ft
+   * (flood 15.5 ft)"). Solo acompaña a un `lastOkAt`: la edad del dato
+   * siempre va al lado. Ausente = aún sin lectura.
+   */
+  summary?: string | null;
+}
+
+/** Dato ambiental de contexto (NO es alerta ni mueve el orbe). */
+export interface ContextoAmbiental {
+  openMeteo: {
+    ok: boolean;
+    temperatureC: number | null;
+    /** Probabilidad máxima de lluvia en las próximas 6 h (0-100). */
+    precipitationProbabilityMax: number | null;
+    /** Una línea lista para mostrar ("7.4°C · rain ≤10% next 6h"). */
+    summary: string | null;
+    observedAt: string | null;
+    error?: string;
+  };
+}
+
+/** Respuesta de GET /health/sources. */
+export interface FuentesSaludRespuesta {
+  sources: Record<string, FuenteSalud>;
+  generatedAt: string;
+  /**
+   * Contexto ambiental (aditivo, 2026-11-01): Open-Meteo, sin llave.
+   * Etiquetado como contexto en la UI; jamás alimenta el orbe ni el
+   * «All clear — verified», que solo responden a `sources` oficiales.
+   */
+  context?: ContextoAmbiental;
+}
+
+/** Respuesta de GET /alerts (contrato §2 ampliado). */
+export interface AlertasRespuesta {
+  alerts: OfficialAlert[];
+  sources: Record<string, FuenteEstado>;
+  point: Ubicacion & { defaulted?: boolean; label?: string };
+  generatedAt: string;
+  cache: { hit: boolean; ttlSeconds: number };
+  fuente?: string;
+}
+
+/** Bloque `guardian` que acompaña la respuesta de /ask en modo guardian. */
+export interface GuardianMeta {
+  point: Ubicacion & { defaulted: boolean };
+  total: number;
+  /** Alertas descartadas por vencidas (corrección 26-oct: no cuentan). */
+  expiredExcluded: number;
+  bySeverity: Record<string, number>;
+  proactiveAlert: boolean;
+  proactiveRule: string;
+  alerts: Array<{
+    event: string;
+    severity: string;
+    headline: string;
+    area: string;
+    ends: string | null;
+    source: FuenteAlerta;
+    url?: string;
+  }>;
+  sources: Record<string, FuenteEstado>;
+  generatedAt: string;
+}
+
+/** Respuesta de POST /ask en modo guardian (contrato §1 + extensión §2). */
+export interface GuardianAskResponse extends GuardianAnswer {
+  guardian?: GuardianMeta;
+}
+
+/** Evento mínimo de seguridad (SECURITY-HARDENING §6): hora y tipo de
+ * señal. SIN contenido personal, sin texto del usuario, sin ubicación. */
+export interface EventoSeguridad {
+  time: string;
+  type: string;
+}
+
+// --- Corpus legal (docs/CONTRACTS.md §3) ---
+
+export interface CorpusDocMeta {
+  titulo: string;
+  fuente: string;
+  jurisdiccion: string;
+  /** Fecha ISO de la última verificación de vigencia. Sin ella, el documento no se usa. */
+  vigencia_verificada: string;
+  release_point: string;
+}
+
+// --- Salud del Dock (migración, Etapa A) ---
+
+export interface HealthResponse {
+  status: 'ok';
+  project: string;
+  version: string;
+  /** Hora del servidor en ISO 8601. */
+  time: string;
+}
+
+// --- Estado de conexión visible en la UI (docs/SECURITY-HARDENING.md §5) ---
+
+export type EstadoConexion =
+  | 'conectado'
+  | 'datos-vencidos'
+  | 'sin-cobertura'
+  | 'simulacion';
+
+// --- Presupuesto (política de WD, 27-oct-2026; contador real en la Etapa D) ---
+
+export interface PresupuestoEstado {
+  limiteUsd: number;
+  consumidoUsd: number;
+  restanteUsd: number;
+  /** ISO de la última conciliación; null = aún sin datos del contador. */
+  actualizadoEn: string | null;
+}
+
+// --- Proveedores de IA intercambiables (Etapa D) ---
+
+export type ProveedorId = 'local' | 'meta' | 'mock';
+
+export interface ResultadoProveedor<T> {
+  ok: boolean;
+  data?: T;
+  error?: string;
+  usage?: UsoModelo;
+}
+
+// --- Puente teléfono ↔ Dock (Etapa D, D5; diseño Spark 1.3, 2026-10-29) ---
+//
+// Sobre común de todo mensaje del puente. Versionado aditivo: dentro de la
+// v1 jamás se renombra ni se retira un campo; los campos nuevos son siempre
+// opcionales y el mayor `v` solo cambia con un cambio incompatible.
+
+export type BridgeMessageType =
+  | 'heartbeat'
+  | 'heartbeat_ack'
+  | 'ask'
+  | 'alerts_poll'
+  | 'answer'
+  | 'alerts_data';
+
+export interface BridgeEnvelope<T = Record<string, unknown>> {
+  /** Versión del contrato, "MAJOR.MINOR" ("1.0" en la v1). */
+  v: string;
+  /** UUID v4 generado por el emisor; clave de idempotencia. */
+  msgId: string;
+  type: BridgeMessageType;
+  /** Identificador del dispositivo: [a-z0-9-]{4,64}. */
+  deviceId: string;
+  /** Marca de envío RFC 3339 UTC con milisegundos. */
+  ts: string;
+  payload: T;
+}
+
+export interface HeartbeatPayload {
+  batteryPct: number;
+  net: 'wifi' | 'cellular' | 'offline';
+  glassesConnected: boolean;
+  loc?: { lat: number; lon: number; accM: number };
+}
+
+export type BridgeSessionState = 'active' | 'stale' | 'gone';
+
+export interface HeartbeatAckPayload {
+  serverTime: string;
+  sessionState: BridgeSessionState;
+  /** Segundos sin latido hasta que el Dock marca el dispositivo `stale`. */
+  staleAfterSec: number;
+  /** Segundos sin latido hasta que el Dock lo marca `gone`. */
+  goneAfterSec: number;
+}
+
+export interface BridgeAskPayload {
+  utterance: string;
+  lang?: string;
+  dialogId?: string;
+  lat?: number;
+  lon?: number;
+}
+
+export interface BridgeAnswerPayload {
+  inReplyTo: string;
+  replyText: string;
+  source: FuenteRespuesta;
+  citations: string[];
+}
+
+export interface BridgeAlertsPollPayload {
+  lat?: number;
+  lon?: number;
+}
+
+export interface BridgeAlertsDataPayload {
+  inReplyTo: string;
+  fetchedAt: string;
+  alerts: OfficialAlert[];
+}
+
+/** Error declarado del puente: jamás una pila ni un 500 por un payload malo. */
+export interface BridgeErrorBody {
+  code: 'INVALID_MESSAGE' | 'DUPLICATE_MESSAGE';
+  message: string;
+  details: Array<{ field: string; issue: string }>;
+}
+
+/** Vista del registro de dispositivos del Dock (GET /bridge/devices). */
+export interface BridgeDeviceView {
+  deviceId: string;
+  lastSeenAt: string;
+  state: BridgeSessionState;
+  lastNet: string | null;
+  batteryPct: number | null;
+}
+
+// --- Awareness por visión (Etapa D, D6; prompt y esquema de Spark 1.3) ---
+
+/** Solicitud de POST /see: una foto y una pregunta opcional. */
+export interface SeeSolicitud {
+  /** Imagen como data URI (image/jpeg, image/png o image/webp) o base64. */
+  image: string;
+  question?: string;
+}
+
+/**
+ * Respuesta de POST /see. La salida del modelo se valida contra este
+ * esquema antes de hablarse: si no cumple, el Dock no la usa (regla de
+ * Spark: la salida del modelo es dato no confiable).
+ */
+export interface SeeRespuesta {
+  description: string;
+  /** Personas solo como presencia: jamás identidad. */
+  peoplePresent: boolean;
+  peopleCount: number | null;
+  hazards: string[];
+  readableText: string[];
+  confidence: 'low' | 'medium' | 'high';
+  source: 'model';
+  usage: UsoModelo;
+}

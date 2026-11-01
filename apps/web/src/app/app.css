@@ -1,0 +1,191 @@
+:host {
+  display: block;
+  color: #f3f4ff;
+}
+
+/* Columna cuidada: todo el marco respira en el mismo ancho. */
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* Cabecera de producto: barra sólida, marca con presencia. */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #080c1c;
+  border-bottom: 1px solid #26314a;
+}
+
+.bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 62px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  color: #f3f4ff;
+  white-space: nowrap;
+}
+
+/* Eco del orbe, solo CSS: anillo con brillo, sin cambiar el texto. */
+.brand::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #35d99a;
+  box-shadow:
+    0 0 10px #35d99a88,
+    inset 0 0 6px #35d99a66;
+  flex-shrink: 0;
+}
+
+/* Pill de conexión: mismo texto y señal, punto de estado vía CSS. */
+.estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid #3c4663;
+  border-radius: 999px;
+  color: #aab9dd;
+  background: #101626;
+  white-space: nowrap;
+}
+
+.estado::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.estado[data-estado='connected'] {
+  border-color: #35d99a;
+  color: #35d99a;
+  background: #35d99a14;
+}
+
+/* Aviso legal: tarjeta de aviso entre cabecera y pestañas. */
+.legal-banner {
+  max-width: min(960px, calc(100% - 32px));
+  margin: 12px auto 0;
+  padding: 10px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  background: linear-gradient(120deg, #141c30, #101626);
+  border: 1px solid #26314a;
+  border-radius: 14px;
+  color: #aab9dd;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.legal-banner a {
+  color: #35d99a;
+  margin-left: 0.5rem;
+  white-space: nowrap;
+}
+
+.legal-banner button {
+  margin-left: 0.75rem;
+  border: 1px solid #35d99a;
+  border-radius: 999px;
+  background: transparent;
+  color: #35d99a;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 0.3rem 0.9rem;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.legal-banner button:hover {
+  opacity: 0.85;
+}
+
+.legal-banner button:active {
+  transform: scale(0.96);
+}
+
+/* Pestañas segmentadas: una barra, cinco segmentos, activa en acento. */
+.tabs {
+  display: flex;
+  gap: 4px;
+  width: min(960px, calc(100% - 32px));
+  margin: 12px auto 0;
+  padding: 6px;
+  background: linear-gradient(120deg, #141c30, #101626);
+  border: 1px solid #26314a;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tabs a {
+  flex: 1 0 auto;
+  text-align: center;
+  white-space: nowrap;
+  text-decoration: none;
+  color: #aab9dd;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.tabs a:hover {
+  color: #f3f4ff;
+  transform: translateY(-1px);
+}
+
+.tabs a:active {
+  transform: scale(0.97);
+}
+
+.tabs a.activa {
+  background: linear-gradient(110deg, #1d3a2f, #132a22);
+  border-color: #35d99a;
+  color: #8ff0c6;
+  font-weight: 700;
+  box-shadow:
+    0 0 18px #35d99a22,
+    inset 0 0 12px #35d99a14;
+}
+
+.tabs a.activa:hover {
+  transform: none;
+}
+
+main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px 16px 56px;
+}

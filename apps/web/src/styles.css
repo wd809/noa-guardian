@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700;750;800&display=swap');
+@import 'leaflet/dist/leaflet.css';
+
+/* Keep Leaflet panes below the app header; controls match the approved v4 map. */
+app-guardian-map .leaflet-container {
+  font-family: Inter, system-ui, sans-serif;
+}
+app-guardian-map .leaflet-bar a {
+  background: #0c1b24;
+  color: #e5f5fb;
+  border-color: #35606d;
+}
+app-guardian-map .leaflet-bar a:hover {
+  background: #184652;
+}
+app-guardian-map .leaflet-control-attribution {
+  background: #0c1b24ed;
+  color: #b8cbd8;
+}
+
+/* Marco v4: canvas oscuro con el halo radial de Guardian. */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: #080c1c;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(ellipse at 65% 35%, #11193466, transparent 65%), #080c1c;
+  background-attachment: fixed;
+  color: #f3f4ff;
+  font:
+    15px/1.5 Inter,
+    system-ui,
+    sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+/* Foco visible siempre en el acento; micro-estados solo transform/opacity. */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #35d99a;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+  }
+}
