@@ -2,9 +2,11 @@ import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 import type { OfficialAlert } from '@noa-guardian/contracts';
 import { GuardianMap, alertPoint } from './guardian-map';
+import { tileLayer } from 'leaflet';
 
 const mocks = vi.hoisted(() => {
   const handlers: Record<string, Array<() => void>> = {};
+  const referenceHandlers: Record<string, Array<() => void>> = {};
   const map = {
     setView: vi.fn().mockReturnThis(),
     attributionControl: { setPrefix: vi.fn() },
@@ -19,6 +21,13 @@ const mocks = vi.hoisted(() => {
     }),
     addTo: vi.fn().mockReturnThis(),
   };
+  const reference = {
+    on: vi.fn((event: string, handler: () => void) => {
+      (referenceHandlers[event] ??= []).push(handler);
+      return reference;
+    }),
+    addTo: vi.fn().mockReturnThis(),
+  };
   const circle = {
     setLatLng: vi.fn(),
     bindTooltip: vi.fn().mockReturnThis(),
@@ -26,6 +35,8 @@ const mocks = vi.hoisted(() => {
   };
   return {
     handlers,
+    referenceHandlers,
+    reference,
     map,
     layer,
     tiles,
@@ -36,7 +47,9 @@ const mocks = vi.hoisted(() => {
 });
 vi.mock('leaflet', () => ({
   map: mocks.createMap,
-  tileLayer: vi.fn(() => mocks.tiles),
+  tileLayer: vi.fn((url: string) =>
+    url.includes('World_Dark_Gray_Reference') ? mocks.reference : mocks.tiles,
+  ),
   circleMarker: mocks.circleMarker,
   layerGroup: vi.fn(() => mocks.layer),
 }));
@@ -67,6 +80,7 @@ describe('Guardian map presentation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     for (const key of Object.keys(mocks.handlers)) delete mocks.handlers[key];
+    for (const key of Object.keys(mocks.referenceHandlers)) delete mocks.referenceHandlers[key];
   });
 
   it('uses the query center and draws zero alert markers when the real list is empty', async () => {
@@ -75,6 +89,17 @@ describe('Guardian map presentation', () => {
     expect(mocks.circleMarker).toHaveBeenCalledTimes(1); // Query position only.
     expect(fixture.nativeElement.textContent).toContain('No active official alerts in your area');
     expect(fixture.nativeElement.textContent).toContain('© OpenStreetMap contributors');
+    expect(tileLayer).toHaveBeenNthCalledWith(
+      1,
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+      { maxZoom: 20, attribution: 'Esri · © OpenStreetMap contributors' },
+    );
+    expect(tileLayer).toHaveBeenNthCalledWith(
+      2,
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+      { maxZoom: 20, zIndex: 2 },
+    );
+    expect(mocks.reference.addTo).toHaveBeenCalledWith(mocks.map);
     fixture.destroy();
     expect(mocks.map.remove).toHaveBeenCalled();
   });
@@ -114,6 +139,18 @@ describe('Guardian map presentation', () => {
     expect(fixture.nativeElement.textContent).toContain('No active official alerts in your area');
     for (const event of ['loading', 'tileload', 'load']) {
       for (const handler of mocks.handlers[event]) handler();
+    }
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).not.toContain('Map unavailable offline');
+    // A successful base batch must not hide a failed reference layer.
+    for (const handler of mocks.referenceHandlers['tileerror']) handler();
+    for (const event of ['loading', 'tileload', 'load']) {
+      for (const handler of mocks.handlers[event]) handler();
+    }
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Map unavailable offline');
+    for (const event of ['loading', 'load']) {
+      for (const handler of mocks.referenceHandlers[event]) handler();
     }
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).not.toContain('Map unavailable offline');

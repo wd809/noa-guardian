@@ -64,11 +64,10 @@ export function alertPoint(alert: OfficialAlert): Ubicacion | null {
         }
       </div>
       <div class="map-credit">
+        <a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">Esri</a>
+        ·
         <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer"
           >© OpenStreetMap contributors</a
-        >
-        <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer"
-          >© CARTO</a
         >
       </div>
     </section>
@@ -117,31 +116,40 @@ export class GuardianMap implements AfterViewInit, OnDestroy {
         13,
       );
       this.map.attributionControl.setPrefix(false);
-      const tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        subdomains: 'abcd',
-        maxZoom: 20,
-        attribution: '© OpenStreetMap contributors © CARTO',
-      });
-      tiles.on('tileerror', () => this.unavailable.set(true));
+      const tiles = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+        { maxZoom: 20, attribution: 'Esri · © OpenStreetMap contributors' },
+      );
+      const reference = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+        { maxZoom: 20, zIndex: 2 },
+      );
       tiles.on('tileload', () => {
         this.loaded.set(true);
         if (this.timeout) clearTimeout(this.timeout);
       });
-      // A completed, entirely successful batch clears an earlier failure.
-      let batchFailed = false;
-      tiles.on('loading', () => {
-        batchFailed = false;
-      });
-      tiles.on('tileerror', () => {
-        batchFailed = true;
-      });
-      tiles.on('load', () => {
-        if (!batchFailed && this.loaded()) this.unavailable.set(false);
-      });
+      // Neither layer may hide a failure in the other layer.
+      const failedLayers = new Set<Leaflet.TileLayer>();
+      for (const layer of [tiles, reference]) {
+        let batchFailed = false;
+        layer.on('loading', () => {
+          batchFailed = false;
+        });
+        layer.on('tileerror', () => {
+          batchFailed = true;
+          failedLayers.add(layer);
+          this.unavailable.set(true);
+        });
+        layer.on('load', () => {
+          if (!batchFailed) failedLayers.delete(layer);
+          if (failedLayers.size === 0 && this.loaded()) this.unavailable.set(false);
+        });
+      }
       this.timeout = setTimeout(() => {
         if (!this.loaded()) this.unavailable.set(true);
       }, 12_000);
       tiles.addTo(this.map);
+      reference.addTo(this.map);
       this.position = L.circleMarker([lat, lon], {
         radius: 7,
         color: '#e5f5fb',
